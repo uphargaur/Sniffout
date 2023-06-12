@@ -1,32 +1,31 @@
-package com.example.sniffout.ui.Map
-
 import android.annotation.SuppressLint
-import android.content.Context
-import android.location.Location
-import android.location.LocationListener
-import android.location.LocationManager
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.model.LatLng
 
-class LocationViewModel(val context: Context) :ViewModel() {
+class LocationViewModel(application: Application) : AndroidViewModel(application) {
+    private val _currentLocation = MutableLiveData<LatLng>()
+    val currentLocation: LiveData<LatLng> get() = _currentLocation
 
-        val  LocationLivedata : MutableLiveData<LatLng> = MutableLiveData()
-
-    @SuppressLint("MissingPermission")
-    fun startLocationUpdates() {
-        val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-        val locationListener = object : LocationListener {
-            override fun onLocationChanged(location: Location) {
-                val latLng = LatLng(location.latitude, location.longitude)
-                LocationLivedata.postValue(latLng)
-            }
-
-
-        }
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0f, locationListener)
+    private val fusedLocationClient: FusedLocationProviderClient by lazy {
+        LocationServices.getFusedLocationProviderClient(application)
     }
 
+    @SuppressLint("MissingPermission")
+    fun fetchCurrentLocation() {
+        fusedLocationClient.lastLocation
+            .addOnSuccessListener { location ->
+                location?.let {
+                    val latLng = LatLng(location.latitude, location.longitude)
+                    _currentLocation.value = latLng
+                }
+            }
+            .addOnFailureListener { exception ->
+                // Handle failure to fetch location
+            }
+    }
 }
-
-

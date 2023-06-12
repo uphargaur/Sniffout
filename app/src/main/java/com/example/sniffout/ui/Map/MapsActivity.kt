@@ -1,5 +1,6 @@
 package com.example.sniffout.ui.Map
 
+import LocationViewModel
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
@@ -12,7 +13,6 @@ import android.provider.Settings
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import com.example.sniffout.R
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -24,7 +24,6 @@ import com.example.sniffout.databinding.ActivityMapsBinding
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import kotlinx.coroutines.runBlocking
-
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
@@ -56,18 +55,16 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             checkLocationPermissionAndRequest()
         }
         mMap.isMyLocationEnabled = true
-//        mMap.animateCamera()
         mMap.uiSettings.isMyLocationButtonEnabled = true
         mMap.uiSettings.isCompassEnabled=true
-        //Update Location Ui
-        locationViewModel = ViewModelProvider(this).get(LocationViewModel::class.java)
 
-//        locationViewModel.LocationLivedata.observe(this, Observer { location ->
-//            // Update the map with the new location
-//            updateMap(location)
-//        })
-        println("set your location ")
+       val viewModel = ViewModelProvider(this).get(LocationViewModel::class.java)
+        viewModel.currentLocation.observe(this) { location ->
+            //Update Location Ui
+            updateMap(location)
+        }
 
+        viewModel.fetchCurrentLocation()
 
     }
      fun updateMap(location: LatLng) {
@@ -77,13 +74,29 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         val markerOptions = MarkerOptions()
             .position(location)
             .title("Your Location")
-            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE))
+            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN))
         mMap.addMarker(markerOptions)
 
         // Move the camera to the new location
         mMap.moveCamera(CameraUpdateFactory.newLatLng(location))
         mMap.animateCamera(CameraUpdateFactory.zoomTo(15f))
+//         getnearbyplaces(location)
     }
+//    private fun getnearbyplaces(location: LatLng) {
+//        val radius = 2000
+//        val apiKey="AIzaSyA3zeQUA47kyCgI5XJFJMn6zybxb3jPqeQ"
+//        viewModel.loadPlaces(location.toString(), 1000, apiKey)
+////        println("We called view model")
+//        viewModel.places.observe(this) { places ->
+//            for (place in places) {
+//                val markerOptions = MarkerOptions()
+//                    .position(LatLng(place.geometry.location.lat, place.geometry.location.lng))
+//                    .title(place.name)
+//                mMap.addMarker(markerOptions)
+//            }
+//        }
+//    }
+
     suspend fun checkLocationPermissions(): Boolean {
         return ContextCompat.checkSelfPermission(
             this,
